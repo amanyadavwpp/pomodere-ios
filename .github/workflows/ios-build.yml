@@ -34,19 +34,31 @@ jobs:
             -configuration Release \
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             build
 
-      - name: Find app
+      - name: Check build output
         run: |
-          find ios -name "*.app" -type d
+          echo "Looking for built .app files..."
+          find build -name "*.app" -type d -print
 
       - name: Create IPA
         run: |
-          APP_PATH=$(find ios -name "App.app" -type d | head -n 1)
-          mkdir -p Payload
+          APP_PATH=$(find build -name "*.app" -type d | head -n 1)
+
+          if [ -z "$APP_PATH" ]; then
+            echo "ERROR: No .app file found"
+            exit 1
+          fi
+
+          echo "Using app: $APP_PATH"
+
+          rm -rf Payload
+          mkdir Payload
           cp -R "$APP_PATH" Payload/App.app
+
           zip -r Pomodere-unsigned.ipa Payload
 
       - name: Upload IPA
